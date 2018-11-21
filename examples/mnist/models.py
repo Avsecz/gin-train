@@ -1,5 +1,0 @@
-"""Mnist models
-"""
-
-
-# TODO

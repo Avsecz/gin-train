@@ -1,0 +1,38 @@
+# you can import any other python modules
+# NOTE: if your code is not importable in python directly
+# you either have to `cd` into the directory containing the modules
+# or you need to add the folder with the python files to PYTHONPATH:
+# `export PYTHONPATH=$PYTHONPATH:~/my_directory/`
+import my_code
+
+# ==================================================================
+# model.gin
+# --------------------------------------------
+# model
+train.trainer_cls = @KerasTrainer
+train.model = @mlp_model()
+mlp_model.n_hidden = 10
+
+# --------------------------------------------
+# training
+train.batch_size = 256
+train.num_workers = 8
+
+# train-specific
+train.epochs = 100
+train.early_stop_patience = 4
+train.train_epoch_frac = 0.1
+train.valid_epoch_frac = 0.2
+
+
+# ==================================================================
+# problem.gin
+# --------------------------------------------
+# data
+train.data = @train_test_data()  # use the default train and valid chromosomes
+train_test_data.dataset_cls = @RandomDataset
+RandomDataset.n = 1000
+
+# --------------------------------------------
+# evaluation
+train.eval_metric = @ClassificationMetrics()

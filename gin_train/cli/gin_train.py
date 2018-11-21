@@ -51,55 +51,55 @@ def kv_string2dict(s):
 
 
 # TODO - old class
-@gin.configurable
-def train_keras(output_dir,
-                model=gin.REQUIRED,
-                data=gin.REQUIRED,
-                eval_metric=gin.REQUIRED,
-                # shared
-                batch_size=256,
-                num_workers=8,
-                # train-specific
-                epochs=100,
-                early_stop_patience=4,
-                train_epoch_frac=1.0,
-                valid_epoch_frac=1.0,
-                train_batch_sampler=None,
-                # stratified_sampler_p=None,
-                tensorboard=True,
-                cometml_experiment=None,
-                ):
-    """Main entry point to configure in the gin config
-    Args:
-      model: compiled keras model
-      data: tuple of (train, valid) Datasets
-    """
-    # from this point on, no configurable should be added. Save the gin config
-    log_gin_config(output_dir, cometml_experiment)
+# @gin.configurable
+# def train_keras(output_dir,
+#                 model=gin.REQUIRED,
+#                 data=gin.REQUIRED,
+#                 eval_metric=gin.REQUIRED,
+#                 # shared
+#                 batch_size=256,
+#                 num_workers=8,
+#                 # train-specific
+#                 epochs=100,
+#                 early_stop_patience=4,
+#                 train_epoch_frac=1.0,
+#                 valid_epoch_frac=1.0,
+#                 train_batch_sampler=None,
+#                 # stratified_sampler_p=None,
+#                 tensorboard=True,
+#                 cometml_experiment=None,
+#                 ):
+#     """Main entry point to configure in the gin config
+#     Args:
+#       model: compiled keras model
+#       data: tuple of (train, valid) Datasets
+#     """
+#     # from this point on, no configurable should be added. Save the gin config
+#     log_gin_config(output_dir, cometml_experiment)
 
-    train_dataset, valid_dataset = data
-    # if stratified_sampler_p is not None and train_batch_sampler is None:
-    #     # HACK - there is no guarantee that train_dataset.get_targets() will exist
-    #     # Maybe we have to introduce a ClassificationDataset instead which will
-    #     # always implement get_targets()
-    #     logger.info(f"Using stratified samplers with p: {stratified_sampler_p}")
-    #     train_batch_sampler = samplers.StratifiedRandomBatchSampler(train_dataset.get_targets().max(axis=1),
-    #                                                                 batch_size=batch_size,
-    #                                                                 p_vec=stratified_sampler_p,
-    #                                                                 verbose=True)
-    # if stratified_sampler_p is not None and train_batch_sampler is not None:
-    #     raise ValueError("stratified_sampler_p and train_batch_sampler are mutually exclusive."
-    #                      " Please specify only one of them.")
+#     train_dataset, valid_dataset = data
+#     # if stratified_sampler_p is not None and train_batch_sampler is None:
+#     #     # HACK - there is no guarantee that train_dataset.get_targets() will exist
+#     #     # Maybe we have to introduce a ClassificationDataset instead which will
+#     #     # always implement get_targets()
+#     #     logger.info(f"Using stratified samplers with p: {stratified_sampler_p}")
+#     #     train_batch_sampler = samplers.StratifiedRandomBatchSampler(train_dataset.get_targets().max(axis=1),
+#     #                                                                 batch_size=batch_size,
+#     #                                                                 p_vec=stratified_sampler_p,
+#     #                                                                 verbose=True)
+#     # if stratified_sampler_p is not None and train_batch_sampler is not None:
+#     #     raise ValueError("stratified_sampler_p and train_batch_sampler are mutually exclusive."
+#     #                      " Please specify only one of them.")
 
-    tr = KerasTrainer(model, train_dataset, valid_dataset, output_dir, cometml_experiment)
-    tr.train(batch_size, epochs, early_stop_patience,
-             num_workers, train_epoch_frac, valid_epoch_frac, train_batch_sampler, tensorboard)
-    final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers)
-    logger.info("Done!")
-    print("-" * 40)
-    print("Final metrics: ")
-    print(json.dumps(final_metrics, indent=2))
-    return final_metrics
+#     tr = KerasTrainer(model, train_dataset, valid_dataset, output_dir, cometml_experiment)
+#     tr.train(batch_size, epochs, early_stop_patience,
+#              num_workers, train_epoch_frac, valid_epoch_frac, train_batch_sampler, tensorboard)
+#     final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers)
+#     logger.info("Done!")
+#     print("-" * 40)
+#     print("Final metrics: ")
+#     print(json.dumps(final_metrics, indent=2))
+#     return final_metrics
 
 
 @gin.configurable
@@ -171,6 +171,7 @@ def gin_train(gin_files, output_dir,
         If not specified, cometml will not get used
       cometml_log: additional notes for cometml
     """
+    sys.path.append(os.getcwd())
 
     if os.path.exists(output_dir):
         if force_overwrite:

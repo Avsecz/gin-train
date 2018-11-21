@@ -1,6 +1,12 @@
 ## Train an mnist model
 
+cd into this directory: 
 
 ```bash
-gin_train problem.gin,model.gin default/ --gpu=1 -c Avsecz/basepair-chipseq-cls -f
+cd examples/mnist
+```
+
+Run:
+```bash
+gin_train config.gin output_dir --force-overwrite
 ```
