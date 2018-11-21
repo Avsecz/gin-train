@@ -1,0 +1,14 @@
+# ==================================================================
+# problem.gin
+# --------------------------------------------
+# data
+train.data = @chrom_dataset()  # use the default train and valid chromosomes
+chrom_dataset.dataset_cls = @SeqClassification
+SeqClassification.fasta_file = "/mnt/data/pipeline_genome_data/mm10/mm10_no_alt_analysis_set_ENCODE.fasta"
+SeqClassification.intervals_file = "/srv/scratch/avsec/workspace/chipnexus/data/processed/chipseq/labels/chipseq/genome-wide/chipseq.oct4-sox2.intervals_file.tsv.gz"
+# --------------------------------------------
+# evaluation
+train.eval_metric = @MetricsMultiTask()
+MetricsMultiTask.task_names = ["Oct4", "Sox2"]
+MetricsMultiTask.metrics = @MetricsConcise()
+MetricsConcise.metrics = ['auprc', 'auc', 'accuracy']%

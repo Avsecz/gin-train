@@ -1,0 +1,26 @@
+# ==================================================================
+# model.gin
+# --------------------------------------------
+# model
+train.model = @binary_seq_multitask()
+binary_seq_multitask.filters = 64
+binary_seq_multitask.conv1_kernel_size = 25
+binary_seq_multitask.n_dil_layers = 9
+binary_seq_multitask.pool_size = 50
+binary_seq_multitask.dropout = 0.2
+binary_seq_multitask.fc_units = [64]
+binary_seq_multitask.lr = 0.004
+binary_seq_multitask.seq_len = 1000
+binary_seq_multitask.n_tasks = 2
+
+# --------------------------------------------
+# training
+train.batch_size = 256
+train.num_workers = 8
+
+# train-specific
+train.epochs = 100
+train.early_stop_patience = 4
+train.train_epoch_frac = 0.1
+train.valid_epoch_frac = 0.2
+train.stratified_sampler_p = [0.95, 0.05]  # stratified sampling%   
