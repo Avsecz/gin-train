@@ -6,7 +6,7 @@ import sys
 import os
 import yaml
 from gin_train.config import create_tf_session
-from gin_train.utils import write_json, Logger
+from gin_train.utils import write_json, Logger, NumpyAwareJSONEncoder
 from comet_ml import Experiment
 
 # import all modules registering any gin configurables
@@ -150,7 +150,7 @@ def train(output_dir,
     logger.info("Done!")
     print("-" * 40)
     print("Final metrics: ")
-    print(json.dumps(final_metrics, indent=2))
+    print(json.dumps(final_metrics, cls=NumpyAwareJSONEncoder, indent=2))
     return final_metrics
 
 

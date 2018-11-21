@@ -1,6 +1,7 @@
 import collections
 import sys
 import json
+import numpy as np
 
 
 class Logger(object):
@@ -31,6 +32,16 @@ class Logger(object):
         self.stdout.flush()
 
 
+class NumpyAwareJSONEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.generic):
+            return obj.item()
+        return json.JSONEncoder.default(self, obj)
+
+
 def write_json(obj, fname, **kwargs):
     with open(fname, "w") as f:
-        return json.dump(obj, f, **kwargs)
+        return json.dump(obj, f, cls=NumpyAwareJSONEncoder, **kwargs)

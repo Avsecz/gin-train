@@ -83,11 +83,14 @@ class KerasTrainer:
             tb = []
 
         # train the model
+        if len(self.valid_dataset) == 0:
+            raise ValueError("len(self.valid_dataset) == 0")
+
         self.model.fit_generator(train_it,
                                  epochs=epochs,
-                                 steps_per_epoch=int(len(self.train_dataset) / batch_size * train_epoch_frac),
+                                 steps_per_epoch=max(int(len(self.train_dataset) / batch_size * train_epoch_frac), 1),
                                  validation_data=valid_it,
-                                 validation_steps=int(len(self.valid_dataset) / batch_size * valid_epoch_frac),
+                                 validation_steps=max(int(len(self.valid_dataset) / batch_size * valid_epoch_frac), 1),
                                  callbacks=[EarlyStopping(patience=early_stop_patience),
                                             CSVLogger(self.history_path),
                                             ModelCheckpoint(self.ckp_file, save_best_only=True)] + tb

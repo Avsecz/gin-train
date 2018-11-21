@@ -15,14 +15,14 @@ mlp_model.n_hidden = 10
 
 # --------------------------------------------
 # training
-train.batch_size = 256
+train.batch_size = 32
 train.num_workers = 8
 
 # train-specific
 train.epochs = 100
 train.early_stop_patience = 4
-train.train_epoch_frac = 0.1
-train.valid_epoch_frac = 0.2
+train.train_epoch_frac = 1.0  # optionally subset the training set
+train.valid_epoch_frac = 1.0  # optionally subset the validation set
 
 
 # ==================================================================
