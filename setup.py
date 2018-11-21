@@ -4,7 +4,7 @@
 from setuptools import setup, find_packages
 
 requirements = [
-    "kipoi>=0.5.5",
+    "kipoi>=0.6.0",
     "gin-config",
     "comet_ml",
     "numpy",
@@ -12,7 +12,7 @@ requirements = [
     "tqdm",
     "colorlog",
     "argh",
-    "scikit-learn",
+    "scikit-learn"
     # sometimes required
 ]
 
@@ -26,7 +26,6 @@ test_requirements = [
     "pytest-pep8",
     "pytest-cov",
     "coveralls",
-    "cython",
 ]
 
 setup(
