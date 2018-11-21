@@ -1,0 +1,68 @@
+version: 2
+
+variables:
+  update_conda: &update_conda
+    run:
+      name: Update conda
+      command: conda update --yes conda
+  install_gin_train: &install_gin_train
+    run:
+      name: Install gin_train
+      command: pip install '.[develop]'
+  run_tests: &run_tests
+    run:
+      name: Run tests
+      command: |
+        mkdir test-reports
+        py.test --cov=gin_train/ tests/ -n 1 --no-cov-on-fail --junitxml=test-reports/junit.xml
+  run_coveralls: &run_coveralls
+    run:
+      name: run coveralls
+      command: coveralls || true
+  store_test_results: &store_test_results
+    store_test_results:
+      path: test-reports
+  store_test_artifacts: &store_test_artifacts
+    store_artifacts:
+      path: test-reports
+      destination: test-reports
+
+jobs:
+
+  test-py36:
+    docker:
+      - image: kipoi/miniconda3:4.3.14
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - *update_conda
+      - *install_gin_train
+      - *run_tests
+      - *run_coveralls
+      - *store_test_results
+      - *store_test_artifacts
+
+  # test-py27:
+  #   docker:
+  #     - image: kipoi/miniconda:4.3.14
+  #   working_directory: ~/repo
+  #   steps:
+  #     - checkout
+  #     - *update_conda
+  #     - *install_git_lfs
+  #     - *update_pytorch
+  #     - *install_pip_deps
+  #     - *install_kipoi
+  #     - *install_gin_train
+  #     - *kipoi_ls
+  #     - *run_tests
+  #     - *store_test_results
+  #     - *store_test_artifacts
+
+workflows:
+  version: 2
+
+  test:
+    jobs:
+      - test-py36
+      # - test-py27
