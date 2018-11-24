@@ -21,5 +21,9 @@ train.valid_epoch_frac = 1.0
 
 
 # evaluation
-train.eval_metric = @MetricsConcise()
-MetricsConcise.metrics = ['mse']
+train.eval_metric = @gin_train.metrics.mse
+# train.eval_metric = @mse   # works as well
+
+# OR
+# train.eval_metric = @MetricsConcise()
+# MetricsConcise.metrics = ['mse']
