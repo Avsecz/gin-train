@@ -15,6 +15,8 @@ from comet_ml import Experiment
 from gin_train.trainers import KerasTrainer
 from gin_train import metrics
 from gin_train import trainers
+from gin_train import samplers
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -50,58 +52,6 @@ def kv_string2dict(s):
     return yaml.load(s.replace(",", "\n").replace("=", ": "))
 
 
-# TODO - old class
-# @gin.configurable
-# def train_keras(output_dir,
-#                 model=gin.REQUIRED,
-#                 data=gin.REQUIRED,
-#                 eval_metric=gin.REQUIRED,
-#                 # shared
-#                 batch_size=256,
-#                 num_workers=8,
-#                 # train-specific
-#                 epochs=100,
-#                 early_stop_patience=4,
-#                 train_epoch_frac=1.0,
-#                 valid_epoch_frac=1.0,
-#                 train_batch_sampler=None,
-#                 # stratified_sampler_p=None,
-#                 tensorboard=True,
-#                 cometml_experiment=None,
-#                 ):
-#     """Main entry point to configure in the gin config
-#     Args:
-#       model: compiled keras model
-#       data: tuple of (train, valid) Datasets
-#     """
-#     # from this point on, no configurable should be added. Save the gin config
-#     log_gin_config(output_dir, cometml_experiment)
-
-#     train_dataset, valid_dataset = data
-#     # if stratified_sampler_p is not None and train_batch_sampler is None:
-#     #     # HACK - there is no guarantee that train_dataset.get_targets() will exist
-#     #     # Maybe we have to introduce a ClassificationDataset instead which will
-#     #     # always implement get_targets()
-#     #     logger.info(f"Using stratified samplers with p: {stratified_sampler_p}")
-#     #     train_batch_sampler = samplers.StratifiedRandomBatchSampler(train_dataset.get_targets().max(axis=1),
-#     #                                                                 batch_size=batch_size,
-#     #                                                                 p_vec=stratified_sampler_p,
-#     #                                                                 verbose=True)
-#     # if stratified_sampler_p is not None and train_batch_sampler is not None:
-#     #     raise ValueError("stratified_sampler_p and train_batch_sampler are mutually exclusive."
-#     #                      " Please specify only one of them.")
-
-#     tr = KerasTrainer(model, train_dataset, valid_dataset, output_dir, cometml_experiment)
-#     tr.train(batch_size, epochs, early_stop_patience,
-#              num_workers, train_epoch_frac, valid_epoch_frac, train_batch_sampler, tensorboard)
-#     final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers)
-#     logger.info("Done!")
-#     print("-" * 40)
-#     print("Final metrics: ")
-#     print(json.dumps(final_metrics, indent=2))
-#     return final_metrics
-
-
 @gin.configurable
 def train(output_dir,
           model=gin.REQUIRED,
@@ -117,7 +67,7 @@ def train(output_dir,
           train_epoch_frac=1.0,
           valid_epoch_frac=1.0,
           train_batch_sampler=None,
-          # stratified_sampler_p=None,
+          stratified_sampler_p=None,
           tensorboard=True,
           cometml_experiment=None,
           ):
@@ -130,18 +80,18 @@ def train(output_dir,
     log_gin_config(output_dir, cometml_experiment)
 
     train_dataset, valid_dataset = data
-    # if stratified_sampler_p is not None and train_batch_sampler is None:
-    #     # HACK - there is no guarantee that train_dataset.get_targets() will exist
-    #     # Maybe we have to introduce a ClassificationDataset instead which will
-    #     # always implement get_targets()
-    #     logger.info(f"Using stratified samplers with p: {stratified_sampler_p}")
-    #     train_batch_sampler = samplers.StratifiedRandomBatchSampler(train_dataset.get_targets().max(axis=1),
-    #                                                                 batch_size=batch_size,
-    #                                                                 p_vec=stratified_sampler_p,
-    #                                                                 verbose=True)
-    # if stratified_sampler_p is not None and train_batch_sampler is not None:
-    #     raise ValueError("stratified_sampler_p and train_batch_sampler are mutually exclusive."
-    #                      " Please specify only one of them.")
+    if stratified_sampler_p is not None and train_batch_sampler is None:
+        # HACK - there is no guarantee that train_dataset.get_targets() will exist
+        # Maybe we have to introduce a ClassificationDataset instead which will
+        # always implement get_targets()
+        logger.info(f"Using stratified samplers with p: {stratified_sampler_p}")
+        train_batch_sampler = samplers.StratifiedRandomBatchSampler(train_dataset.get_targets().max(axis=1),
+                                                                    batch_size=batch_size,
+                                                                    p_vec=stratified_sampler_p,
+                                                                    verbose=True)
+    if stratified_sampler_p is not None and train_batch_sampler is not None:
+        raise ValueError("stratified_sampler_p and train_batch_sampler are mutually exclusive."
+                         " Please specify only one of them.")
 
     tr = trainer_cls(model, train_dataset, valid_dataset, output_dir, cometml_experiment)
     tr.train(batch_size, epochs, early_stop_patience,
