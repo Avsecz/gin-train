@@ -7,8 +7,13 @@ This is a simple wrapper around gin-config (https://github.com/google/gin-config
 
 ## Installation
 
-`git clone git@github.com:Avsecz/gin-train.git`
-`pip install -e gin-train`
+```bash
+git clone git@github.com:Avsecz/gin-train.git
+```
+
+```bash
+pip install -e gin-train
+```
 
 ## Examples
 
