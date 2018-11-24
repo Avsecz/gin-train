@@ -1,5 +1,7 @@
 # gin-train
 
+[![CircleCI](https://circleci.com/gh/Avsecz/gin-train.svg?style=svg&circle-token=b2623a0886aaf8f679e8c2846d162d6bcd5c0c99)](https://circleci.com/gh/Avsecz/gin-train)
+
 This is a simple wrapper around gin-config (https://github.com/google/gin-config/) to train Keras models. Please see the documentation for gin-config for more information on how to use gin.
 
 
