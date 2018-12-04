@@ -34,13 +34,17 @@ def log_gin_config(output_dir, cometml_experiment=None):
     with open(os.path.join(output_dir, "config.gin"), "w") as f:
         f.write(gin_config_str)
     # parse the gin config string to dictionary
+    gin_config_str = "\n".join([x for x in gin_config_str.split("\n")
+                                if not x.startswith("import")])
+    gin_config_dict = yaml.load(gin_config_str.replace(" = @", ": ").replace(" = ", ": "))
+    write_json(gin_config_dict,
+               os.path.join(output_dir, "config.gin.json"),
+               sort_keys=True,
+               indent=4)
+
     if cometml_experiment is not None:
         # Skip any rows starting with import
-        gin_config_str = "\n".join([x for x in gin_config_str.split("\n")
-                                    if not x.startswith("import")])
-
-        gin_config = yaml.load(gin_config_str.replace(" = @", ": ").replace(" = ", ": "))
-        cometml_experiment.log_multiple_params(gin_config)
+        cometml_experiment.log_multiple_params(gin_config_dict)
 
 
 def add_file_logging(output_dir, logger, name='stdout'):
@@ -125,7 +129,7 @@ def gin_train(gin_files, output_dir,
               auto_subdir=False,
               remote_dir="",
               cometml_project="",
-              cometml_log=""):
+              note_params=""):
     """Train a model using gin-config
 
     Args:
@@ -135,7 +139,8 @@ def gin_train(gin_files, output_dir,
       force_overwrite: if True, the output directory will be overwritten
       cometml_project: comet_ml project name. Example: Avsecz/basepair.
         If not specified, cometml will not get used
-      cometml_log: additional notes for cometml
+      note_params: take note of additional key=value pairs.
+        Example: --note-params note='my custom note',feature_set=this
     """
 
     sys.path.append(os.getcwd())
@@ -182,15 +187,24 @@ def gin_train(gin_files, output_dir,
                                         bindings=gin_bindings.split(","),
                                         skip_unknown=False)
 
+    # write note_params.json
+    if note_params:
+        logger.info(f"note_params: {note_params}")
+        note_params_dict = kv_string2dict(note_params)
+    else:
+        note_params_dict = dict()
+    write_json(note_params_dict,
+               os.path.join(output_dir, "note_params.json"),
+               sort_keys=True,
+               indent=4)
+
     if cometml_experiment is not None:
         # log other parameters
         cometml_experiment.log_multiple_params(dict(gin_files=gin_files,
                                                     gin_bindings=gin_bindings,
                                                     output_dir=output_dir,
                                                     gpu=gpu), prefix='cli/')
-        if cometml_log:
-            logger.info(f"cometml_log: {cometml_log}")
-            cometml_experiment.log_multiple_params(kv_string2dict(cometml_log))
+        cometml_experiment.log_multiple_params(note_params_dict)
 
         exp_url = f"https://www.comet.ml/{cometml_experiment.workspace}/{cometml_experiment.project_name}/{cometml_experiment.id}"
         logger.info("Comet.ml url: " + exp_url)
