@@ -217,4 +217,8 @@ def gin_train(gin_files, output_dir,
                    sort_keys=True,
                    indent=4)
 
+    if remote_dir is not None:
+        import time
+        logger.info("Test file upload to: {}".format(remote_dir))
+        upload_dir(output_dir, remote_dir)
     return train(output_dir=output_dir, remote_dir=remote_dir, cometml_experiment=cometml_experiment)

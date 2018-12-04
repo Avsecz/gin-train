@@ -22,14 +22,15 @@ pip install -e gin-train
 ## Usage
 
 ```bash
-$ gin_train --help
-usage: gin_train [-h] [--gin-bindings GIN_BINDINGS] [--gpu GPU]
-                 [--force-overwrite] [--framework FRAMEWORK]
-                 [--cometml-project COMETML_PROJECT]
-                 [--cometml-log COMETML_LOG]
-                 gin-files output-dir
+$ gt --help
+usage: gt [-h] [--gin-bindings GIN_BINDINGS] [--gpu GPU]
+          [--force-overwrite] [--framework FRAMEWORK]
+          [--cometml-project COMETML_PROJECT]
+          [--cometml-log COMETML_LOG]
+          gin-files output-dir
 
 Train a model using gin-config
+
     Args:
       gin_file: comma separated list of gin files
       gin_bindings: comma separated list of additional gin-bindings to use
@@ -37,7 +38,8 @@ Train a model using gin-config
       force_overwrite: if True, the output directory will be overwritten
       cometml_project: comet_ml project name. Example: Avsecz/basepair.
         If not specified, cometml will not get used
-      cometml_log: additional notes for cometml
+      note_params: take note of additional key=value pairs.
+        Example: --note-params note='my custom note',feature_set=this
     
 
 positional arguments:
@@ -52,10 +54,12 @@ optional arguments:
   --force-overwrite     False
   --framework FRAMEWORK
                         'tf'
-  --cometml-project COMETML_PROJECT
+  -a, --auto-subdir     False
+  -r REMOTE_DIR, --remote-dir REMOTE_DIR
                         ''
-  --cometml-log COMETML_LOG
+  -c COMETML_PROJECT, --cometml-project COMETML_PROJECT
                         ''
+  -n NOTE_PARAMS, --note-params NOTE_PARAMS
 ```
 
 - `gin_file` can be a single or multiple gin files. That allows you to re-use for example the problem definition parts of the
@@ -66,7 +70,7 @@ gin config and the model definition part of gin-config.
 
 
 ```bash
-gin_train problem.gin,model.gin default/ --gpu=1 -c Avsecz/basepair-chipseq-cls -f
+gt problem.gin,model.gin default/ --gpu=1 -c Avsecz/basepair-chipseq-cls -f
 ```
 
 where the gin files are the following:

@@ -43,7 +43,7 @@ setup(
     extras_require={
         "develop": test_requirements,
     },
-    entry_points={'console_scripts': ['gin_train = gin_train.__main__:main', 'gin-train = gin_train.__main__:main']},
+    entry_points={'console_scripts': ['gin_train = gin_train.__main__:main', 'gt = gin_train.__main__:main']},
     license="MIT license",
     zip_safe=False,
     keywords=["deep learning"],
@@ -51,3 +51,4 @@ setup(
     package_data={'gin_train': ['logging.conf']},
     tests_require=test_requirements
 )
+
