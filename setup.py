@@ -32,7 +32,7 @@ test_requirements = [
 
 setup(
     name='gin-train',
-    version='0.1.1',
+    version='0.1.2',
     description="gin-train: model training boilerplate",
     author="Ziga Avsec",
     author_email='avsec@in.tum.de',
