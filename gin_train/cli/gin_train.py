@@ -5,6 +5,8 @@ import json
 import sys
 import os
 import yaml
+from uuid import uuid4
+from gin_train.remote import upload_dir
 from gin_train.config import create_tf_session
 from gin_train.utils import write_json, Logger, NumpyAwareJSONEncoder
 from comet_ml import Experiment
@@ -25,6 +27,7 @@ logger.addHandler(logging.NullHandler())
 
 def log_gin_config(output_dir, cometml_experiment=None):
     gin_config_str = gin.operative_config_str()
+
     print("Used config: " + "-" * 40)
     print(gin_config_str)
     print("-" * 52)
@@ -32,6 +35,10 @@ def log_gin_config(output_dir, cometml_experiment=None):
         f.write(gin_config_str)
     # parse the gin config string to dictionary
     if cometml_experiment is not None:
+        # Skip any rows starting with import
+        gin_config_str = "\n".join([x for x in gin_config_str.split("\n")
+                                    if not x.startswith("import")])
+
         gin_config = yaml.load(gin_config_str.replace(" = @", ": ").replace(" = ", ": "))
         cometml_experiment.log_multiple_params(gin_config)
 
@@ -69,7 +76,8 @@ def train(output_dir,
           train_batch_sampler=None,
           stratified_sampler_p=None,
           tensorboard=True,
-          cometml_experiment=None,
+          remote_dir=None,
+          cometml_experiment=None
           ):
     """Main entry point to configure in the gin config
     Args:
@@ -101,6 +109,11 @@ def train(output_dir,
     print("-" * 40)
     print("Final metrics: ")
     print(json.dumps(final_metrics, cls=NumpyAwareJSONEncoder, indent=2))
+    if remote_dir is not None:
+        import time
+        time.sleep(1)  # sleep so that hdf5 from Keras finishes writing
+        logger.info("Uploading files to: {}".format(remote_dir))
+        upload_dir(output_dir, remote_dir)
     return final_metrics
 
 
@@ -109,9 +122,12 @@ def gin_train(gin_files, output_dir,
               gpu=0,
               force_overwrite=False,
               framework='tf',
+              auto_subdir=False,
+              remote_dir="",
               cometml_project="",
               cometml_log=""):
     """Train a model using gin-config
+
     Args:
       gin_file: comma separated list of gin files
       gin_bindings: comma separated list of additional gin-bindings to use
@@ -121,7 +137,28 @@ def gin_train(gin_files, output_dir,
         If not specified, cometml will not get used
       cometml_log: additional notes for cometml
     """
+
     sys.path.append(os.getcwd())
+    if cometml_project:
+        logger.info("Using comet.ml")
+        workspace, project_name = cometml_project.split("/")
+        cometml_experiment = Experiment(project_name=project_name, workspace=workspace)
+        # TODO - get the experiment id
+        # specify output_dir to that directory
+    else:
+        cometml_experiment = None
+
+    if auto_subdir:
+        if cometml_experiment is None:
+            # create random uuid
+            output_dir = os.path.join(output_dir, str(uuid4()))
+            if remote_dir:
+                remote_dir = os.path.join(remote_dir, str(uuid4()))
+        else:
+            # use Comet.ml experiment
+            output_dir = os.path.join(output_dir, cometml_experiment.id)
+            if remote_dir:
+                remote_dir = os.path.join(remote_dir, cometml_experiment.id)
 
     if os.path.exists(output_dir):
         if force_overwrite:
@@ -134,13 +171,6 @@ def gin_train(gin_files, output_dir,
 
     # add logging to the file
     add_file_logging(output_dir, logger)
-
-    if cometml_project:
-        logger.info("Using comet.ml")
-        workspace, project_name = cometml_project.split("/")
-        cometml_experiment = Experiment(project_name=project_name, workspace=workspace)
-    else:
-        cometml_experiment = None
 
     if framework == 'tf':
         import gin.tf
@@ -173,4 +203,4 @@ def gin_train(gin_files, output_dir,
                    sort_keys=True,
                    indent=4)
 
-    return train(output_dir=output_dir, cometml_experiment=cometml_experiment)
+    return train(output_dir=output_dir, remote_dir=remote_dir, cometml_experiment=cometml_experiment)

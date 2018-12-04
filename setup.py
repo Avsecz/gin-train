@@ -12,7 +12,9 @@ requirements = [
     "tqdm",
     "colorlog",
     "argh",
-    "scikit-learn"
+    "scikit-learn",
+    "fs",
+    "fs-s3fs",
     # sometimes required
 ]
 
