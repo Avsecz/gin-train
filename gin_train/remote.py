@@ -25,7 +25,7 @@ def _open_fs(directory):
             directory += "/"
 
         bucket, fpath = directory[len("s3://"):].split("/", 1)
-        return S3FS("bucket1", dir_path=fpath,
+        return S3FS(bucket, dir_path=fpath,
                     aws_access_key_id=os.environ.get("S3_ACCESS_KEY", None),
                     aws_secret_access_key=os.environ.get('S3_SECRET_KEY', None),
                     strict=False,
