@@ -217,7 +217,7 @@ def gin_train(gin_files, output_dir,
                    sort_keys=True,
                    indent=4)
 
-    if remote_dir is not None:
+    if remote_dir:
         import time
         logger.info("Test file upload to: {}".format(remote_dir))
         upload_dir(output_dir, remote_dir)
