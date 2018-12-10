@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 __author__ = 'Ziga Avsec'
 __email__ = 'avsec@in.tum.de'
-__version__ = '0.1.6'
+__version__ = '0.1.7'
 
 import comet_ml  # need to import this
 from . import metrics
