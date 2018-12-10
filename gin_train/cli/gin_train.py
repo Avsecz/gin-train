@@ -92,6 +92,10 @@ def train(output_dir,
     log_gin_config(output_dir, cometml_experiment)
 
     train_dataset, valid_dataset = data
+    if stratified_sampler_p is not None and train_batch_sampler is not None:
+        raise ValueError("stratified_sampler_p and train_batch_sampler are mutually exclusive."
+                         " Please specify only one of them.")
+
     if stratified_sampler_p is not None and train_batch_sampler is None:
         # HACK - there is no guarantee that train_dataset.get_targets() will exist
         # Maybe we have to introduce a ClassificationDataset instead which will
@@ -101,9 +105,6 @@ def train(output_dir,
                                                                     batch_size=batch_size,
                                                                     p_vec=stratified_sampler_p,
                                                                     verbose=True)
-    if stratified_sampler_p is not None and train_batch_sampler is not None:
-        raise ValueError("stratified_sampler_p and train_batch_sampler are mutually exclusive."
-                         " Please specify only one of them.")
 
     tr = trainer_cls(model, train_dataset, valid_dataset, output_dir, cometml_experiment)
     tr.train(batch_size, epochs, early_stop_patience,
