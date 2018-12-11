@@ -40,7 +40,7 @@ def log_gin_config(output_dir, cometml_experiment=None):
     write_json(gin_config_dict,
                os.path.join(output_dir, "config.gin.json"),
                sort_keys=True,
-               indent=4)
+               indent=2)
 
     if cometml_experiment is not None:
         # Skip any rows starting with import
@@ -114,6 +114,9 @@ def train(output_dir,
     print("-" * 40)
     print("Final metrics: ")
     print(json.dumps(final_metrics, cls=NumpyAwareJSONEncoder, indent=2))
+    metrics_file = os.path.join(output_dir, 'evaluation.valid.json')
+    write_json(final_metrics, metrics_file, indent=2)
+    logger.info("Saved metrics to {}".format(metrics_file))
     if remote_dir:
         import time
         time.sleep(1)  # sleep so that hdf5 from Keras finishes writing
@@ -166,7 +169,7 @@ def gin_train(gin_files, output_dir,
             if remote_dir:
                 remote_dir = os.path.join(remote_dir, cometml_experiment.id)
 
-    if os.path.exists(os.path.join(output_dir), 'config.gin'):
+    if os.path.exists(os.path.join(output_dir, 'config.gin')):
         if force_overwrite:
             logger.info(f"config.gin already exists in the output "
                         "directory {output_dir}. Removing the whole directory.")
@@ -198,7 +201,7 @@ def gin_train(gin_files, output_dir,
     write_json(note_params_dict,
                os.path.join(output_dir, "note_params.json"),
                sort_keys=True,
-               indent=4)
+               indent=2)
 
     if cometml_experiment is not None:
         # log other parameters
@@ -217,7 +220,7 @@ def gin_train(gin_files, output_dir,
                     "workspace": cometml_experiment.workspace},
                    os.path.join(output_dir, "cometml.json"),
                    sort_keys=True,
-                   indent=4)
+                   indent=2)
 
     if remote_dir:
         import time

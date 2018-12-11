@@ -1,4 +1,4 @@
-.PHONY: clean clean-test clean-pyc clean-build help
+.PHONY: clean clean-test clean-pyc clean-build flake8 help
 .DEFAULT_GOAL := help
 
 define PRINT_HELP_PYSCRIPT
@@ -38,7 +38,8 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 
 lint: ## check style
-	py.test --pep8 -m pep8
+	flake8 --ignore=F401,E501,W391
+	# py.test --pep8 -m pep8
 
 test: ## run tests quickly with the default Python
 	py.test
