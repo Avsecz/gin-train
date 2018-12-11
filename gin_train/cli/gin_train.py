@@ -166,14 +166,15 @@ def gin_train(gin_files, output_dir,
             if remote_dir:
                 remote_dir = os.path.join(remote_dir, cometml_experiment.id)
 
-    if os.path.exists(output_dir):
+    if os.path.exists(os.path.join(output_dir), 'config.gin'):
         if force_overwrite:
-            logger.info(f"Output directory exists: {output_dir}. Removing it.")
+            logger.info(f"config.gin already exists in the output "
+                        "directory {output_dir}. Removing the whole directory.")
             import shutil
             shutil.rmtree(output_dir)
         else:
             raise ValueError(f"Output directory {output_dir} shouldn't exist!")
-    os.makedirs(output_dir)  # make the output directory. It shouldn't exist
+    os.makedirs(output_dir, exist_ok=True)  # make the output directory. It shouldn't exist
 
     # add logging to the file
     add_file_logging(output_dir, logger)
