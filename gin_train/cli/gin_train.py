@@ -80,7 +80,7 @@ def train(output_dir,
           train_batch_sampler=None,
           stratified_sampler_p=None,
           tensorboard=True,
-          remote_dir=None,
+          remote_dir='',
           cometml_experiment=None
           ):
     """Main entry point to configure in the gin config
@@ -114,7 +114,7 @@ def train(output_dir,
     print("-" * 40)
     print("Final metrics: ")
     print(json.dumps(final_metrics, cls=NumpyAwareJSONEncoder, indent=2))
-    if remote_dir is not None:
+    if remote_dir:
         import time
         time.sleep(1)  # sleep so that hdf5 from Keras finishes writing
         logger.info("Uploading files to: {}".format(remote_dir))
