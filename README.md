@@ -8,11 +8,7 @@ This is a simple wrapper around gin-config (https://github.com/google/gin-config
 ## Installation
 
 ```bash
-git clone git@github.com:Avsecz/gin-train.git
-```
-
-```bash
-pip install -e gin-train
+pip install gin-train
 ```
 
 ## Examples
