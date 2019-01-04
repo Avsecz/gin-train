@@ -6,10 +6,6 @@ from fs import open_fs
 import os
 from tqdm import tqdm
 
-# os.environ['S3_ACCESS_KEY'] = 'C3O9BDTOXYGWVS5NWX9Z'
-# os.environ['S3_SECRET_KEY'] = '6KqLLW++Qewvky64ii0yJ6WPxODKt1ZbPJe5ozaw'
-# os.environ['S3_URL'] = 'http://171.66.183.120:9000'
-
 
 def _open_fs(directory):
     if directory.startswith("s3://"):
