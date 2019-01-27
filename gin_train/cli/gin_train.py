@@ -141,29 +141,37 @@ def train(output_dir,
     return final_metrics
 
 
-def gin_train(gin_files, output_dir,
-              run_id=None,
+def gin_train(gin_files,
+              output_dir,
               gin_bindings='',
               gpu=0,
-              force_overwrite=False,
               framework='tf',
-              remote_dir="",
               cometml_project="",
               wandb_project="",
-              note_params=""):
+              remote_dir="",
+              run_id=None,
+              note_params="",
+              force_overwrite=False):
     """Train a model using gin-config
 
     Args:
       gin_file: comma separated list of gin files
+      output_dir: where to store the results. Note: a subdirectory `run_id`
+        will be created in `output_dir`.
       gin_bindings: comma separated list of additional gin-bindings to use
-      run_id: manual run id
-      output_dir: where to store the results
-      force_overwrite: if True, the output directory will be overwritten
+      gpu: which gpu to use. Example: gpu=1
+      framework: which framework to use. Available: tf
       cometml_project: comet_ml project name. Example: Avsecz/basepair.
         If not specified, cometml will not get used
-      wandb_project: wandb project name. If not specified, wandb will not be used
+      wandb_project: wandb `<entity>/<project>` name. Example: Avsecz/test.
+        If not specified, wandb will not be used
+      remote_dir: additional path to the remote directory. Can be an s3 path.
+        Example: `s3://mybucket/model1/exp1`
+      run_id: manual run id. If not specified, it will be either randomly
+        generated or re-used from wandb or comet.ml.
       note_params: take note of additional key=value pairs.
         Example: --note-params note='my custom note',feature_set=this
+      force_overwrite: if True, the output directory will be overwritten
     """
 
     sys.path.append(os.getcwd())

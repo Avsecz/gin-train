@@ -19,25 +19,32 @@ pip install gin-train
 
 ```bash
 $ gt --help
-usage: gt [-h] [--run-id RUN_ID] [--gin-bindings GIN_BINDINGS] [--gpu GPU]
-          [--force-overwrite] [--framework FRAMEWORK]
-          [--remote-dir REMOTE_DIR] [-c COMETML_PROJECT] [-w WANDB_PROJECT]
-          [-n NOTE_PARAMS]
+usage: gt [-h] [--gin-bindings GIN_BINDINGS] [--gpu GPU]
+          [--framework FRAMEWORK] [-c COMETML_PROJECT] [-w WANDB_PROJECT]
+          [--remote-dir REMOTE_DIR] [--run-id RUN_ID] [-n NOTE_PARAMS]
+          [--force-overwrite]
           gin-files output-dir
 
 Train a model using gin-config
 
     Args:
       gin_file: comma separated list of gin files
+      output_dir: where to store the results. Note: a subdirectory `run_id`
+        will be created in `output_dir`.
       gin_bindings: comma separated list of additional gin-bindings to use
-      run_id: manual run id
-      output_dir: where to store the results
-      force_overwrite: if True, the output directory will be overwritten
+      gpu: which gpu to use. Example: gpu=1
+      framework: which framework to use. Available: tf
       cometml_project: comet_ml project name. Example: Avsecz/basepair.
         If not specified, cometml will not get used
-      wandb_project: wandb project name. If not specified, wandb will not be used
+      wandb_project: wandb `<entity>/<project>` name. Example: Avsecz/test.
+        If not specified, wandb will not be used
+      remote_dir: additional path to the remote directory. Can be an s3 path.
+        Example: `s3://mybucket/model1/exp1`
+      run_id: manual run id. If not specified, it will be either randomly
+        generated or re-used from wandb or comet.ml.
       note_params: take note of additional key=value pairs.
         Example: --note-params note='my custom note',feature_set=this
+      force_overwrite: if True, the output directory will be overwritten
     
 
 positional arguments:
@@ -46,21 +53,21 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --run-id RUN_ID       -
   --gin-bindings GIN_BINDINGS
                         ''
   --gpu GPU             0
-  --force-overwrite     False
   --framework FRAMEWORK
                         'tf'
-  --remote-dir REMOTE_DIR
-                        ''
   -c COMETML_PROJECT, --cometml-project COMETML_PROJECT
                         ''
   -w WANDB_PROJECT, --wandb-project WANDB_PROJECT
                         ''
+  --remote-dir REMOTE_DIR
+                        ''
+  --run-id RUN_ID       -
   -n NOTE_PARAMS, --note-params NOTE_PARAMS
-
+                        ''
+  --force-overwrite     False
 ```
 
 - `gin_file` can be a single or multiple gin files. That allows you to re-use for example the problem definition parts of the
