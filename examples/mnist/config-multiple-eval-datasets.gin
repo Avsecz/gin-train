@@ -29,8 +29,8 @@ train.valid_epoch_frac = 1.0  # optionally subset the validation set
 # problem.gin
 # --------------------------------------------
 # data
-train.data = @train_test_data()  # use the default train and valid chromosomes
-train_test_data.dataset_cls = @RandomDataset
+train.data = @multiple_train_test_data()  # use the default train and valid chromosomes
+multiple_train_test_data.dataset_cls = @RandomDataset
 RandomDataset.n = 1000
 
 # --------------------------------------------

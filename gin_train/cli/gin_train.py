@@ -77,6 +77,7 @@ def train(output_dir,
           model=gin.REQUIRED,
           data=gin.REQUIRED,
           eval_metric=gin.REQUIRED,
+          eval_train=False,
           trainer_cls=KerasTrainer,
           # shared
           batch_size=256,
@@ -97,11 +98,23 @@ def train(output_dir,
     Args:
       model: compiled keras model
       data: tuple of (train, valid) Datasets
+      eval_train: if True, also compute the evaluation metrics for the final model
+        on the training set
     """
     # from this point on, no configurable should be added. Save the gin config
     log_gin_config(output_dir, cometml_experiment, wandb_run)
 
     train_dataset, valid_dataset = data
+
+    # make sure the validation dataset names are unique
+    if isinstance(valid_dataset, list):
+        dataset_names = []
+        for d in valid_dataset:
+            dataset_name = d[0]
+            if dataset_name in dataset_names:
+                raise ValueError("The dataset names are not unique")
+            dataset_names.append(dataset_name)
+
     if stratified_sampler_p is not None and train_batch_sampler is not None:
         raise ValueError("stratified_sampler_p and train_batch_sampler are mutually exclusive."
                          " Please specify only one of them.")
@@ -119,7 +132,8 @@ def train(output_dir,
     tr = trainer_cls(model, train_dataset, valid_dataset, output_dir, cometml_experiment, wandb_run)
     tr.train(batch_size, epochs, early_stop_patience,
              num_workers, train_epoch_frac, valid_epoch_frac, train_batch_sampler, tensorboard)
-    final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers, save=True)
+    final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers,
+                                eval_train=eval_train, save=True)
     # pass
     logger.info("Done!")
     print("-" * 40)

@@ -28,6 +28,17 @@ def train_test_data(dataset_cls, n=1000):
 
 
 @gin.configurable
+def multiple_train_test_data(dataset_cls, n=1000):
+    """Example of multiple train and evaluation datasets.
+
+    Second one has a special evaluation metric
+    """
+    from gin_train.metrics import MetricsDict, accuracy
+    return dataset_cls(), [("valid1", RandomDataset(int(n * 0.1))),
+                           ("valid2", RandomDataset(int(n * 0.1)), MetricsDict({"accuracy": accuracy}))]
+
+
+@gin.configurable
 def mlp_model(n_hidden=10):
     """Function compiling the Keras model
     """

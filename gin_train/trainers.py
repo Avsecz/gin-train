@@ -2,6 +2,7 @@ import os
 import numpy as np
 from gin_train.utils import write_json, prefix_dict
 from tqdm import tqdm
+from collections import OrderedDict
 from kipoi.data_utils import numpy_collate_concat
 from kipoi.external.flatten_json import flatten
 import gin
@@ -30,6 +31,10 @@ class KerasTrainer:
         self.valid_dataset = valid_dataset
         self.cometml_experiment = cometml_experiment
         self.wandb_run = wandb_run
+
+        if not isinstance(self.valid_dataset, list):
+            # package the validation dataset into a list of validation datasets
+            self.valid_dataset = [('valid', self.valid_dataset)]
 
         # setup the output directory
         self.output_dir = output_dir
@@ -74,9 +79,10 @@ class KerasTrainer:
                                                            shuffle=True,
                                                            num_workers=num_workers)
         next(train_it)
-        valid_it = self.valid_dataset.batch_train_iter(batch_size=batch_size,
-                                                       shuffle=True,
-                                                       num_workers=num_workers)
+        valid_dataset = self.valid_dataset[0][1]  # take the first one
+        valid_it = valid_dataset.batch_train_iter(batch_size=batch_size,
+                                                  shuffle=True,
+                                                  num_workers=num_workers)
         next(valid_it)
 
         if tensorboard:
@@ -91,14 +97,14 @@ class KerasTrainer:
             wcp = []
 
         # train the model
-        if len(self.valid_dataset) == 0:
+        if len(valid_dataset) == 0:
             raise ValueError("len(self.valid_dataset) == 0")
 
         self.model.fit_generator(train_it,
                                  epochs=epochs,
                                  steps_per_epoch=max(int(len(self.train_dataset) / batch_size * train_epoch_frac), 1),
                                  validation_data=valid_it,
-                                 validation_steps=max(int(len(self.valid_dataset) / batch_size * valid_epoch_frac), 1),
+                                 validation_steps=max(int(len(valid_dataset) / batch_size * valid_epoch_frac), 1),
                                  callbacks=[EarlyStopping(patience=early_stop_patience),
                                             CSVLogger(self.history_path),
                                             ModelCheckpoint(self.ckp_file, save_best_only=True)] + tb + wcp
@@ -110,36 +116,55 @@ class KerasTrainer:
     #         """
     #         self.model = load_model(self.ckp_file)
 
-    def evaluate(self, metric, batch_size=256, num_workers=8, save=True):
+    def evaluate(self, metric, batch_size=256, num_workers=8, eval_train=False, save=True):
         """Evaluate the model on the validation set
         Args:
           metrics: a list or a dictionary of metrics
           batch_size:
           num_workers:
         """
-        lpreds = []
-        llabels = []
-        for inputs, targets in tqdm(self.valid_dataset.batch_train_iter(cycle=False,
-                                                                        num_workers=num_workers,
-                                                                        batch_size=batch_size),
-                                    total=len(self.valid_dataset) // batch_size
-                                    ):
-            lpreds.append(self.model.predict_on_batch(inputs))
-            llabels.append(targets)
-        preds = numpy_collate_concat(lpreds)
-        labels = numpy_collate_concat(llabels)
-        del lpreds
-        del llabels
-        metric_res = metric(labels, preds)
+        # contruct a list of dataset to evaluate
+        if eval_train:
+            eval_datasets = [('train', self.train_dataset)] + self.valid_dataset
+        else:
+            eval_datasets = self.valid_dataset
+
+        metric_res = OrderedDict()
+        for d in eval_datasets:
+            if len(d) == 2:
+                dataset_name, dataset = d
+                eval_metric = metric  # use the default eval metric
+            elif len(d) == 3:
+                # specialized evaluation metric was passed
+                dataset_name, dataset, eval_metric = d
+            else:
+                # TODO - this should be made more explicit with classes
+                raise ValueError("Valid dataset needs to be a list of tuples of 2 or 3 elements"
+                                 "(name, dataset) or (name, dataset, metric)")
+            logger.info(f"Evaluating dataset: {dataset_name}")
+            lpreds = []
+            llabels = []
+            for inputs, targets in tqdm(dataset.batch_train_iter(cycle=False,
+                                                                 num_workers=num_workers,
+                                                                 batch_size=batch_size),
+                                        total=len(dataset) // batch_size
+                                        ):
+                lpreds.append(self.model.predict_on_batch(inputs))
+                llabels.append(targets)
+            preds = numpy_collate_concat(lpreds)
+            labels = numpy_collate_concat(llabels)
+            del lpreds
+            del llabels
+            metric_res[dataset_name] = eval_metric(labels, preds)
 
         if save:
             write_json(metric_res, self.evaluation_path, indent=2)
             logger.info("Saved metrics to {}".format(self.evaluation_path))
 
         if self.cometml_experiment is not None:
-            self.cometml_experiment.log_multiple_metrics(flatten(metric_res), prefix="eval/valid/")
+            self.cometml_experiment.log_multiple_metrics(flatten(metric_res, separator='/'), prefix="eval/")
 
         if self.wandb_run is not None:
-            self.wandb_run.summary.update(flatten(prefix_dict(metric_res, prefix="eval/valid/")))
+            self.wandb_run.summary.update(flatten(prefix_dict(metric_res, prefix="eval/"), separator='/'))
 
         return metric_res
