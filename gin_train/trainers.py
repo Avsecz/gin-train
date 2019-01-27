@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 from gin_train.utils import write_json, prefix_dict
 from tqdm import tqdm
 from collections import OrderedDict
@@ -110,6 +111,14 @@ class KerasTrainer:
                                             ModelCheckpoint(self.ckp_file, save_best_only=True)] + tb + wcp
                                  )
         self.model = load_model(self.ckp_file)
+
+        # log metrics from the best epoch
+        dfh = pd.read_csv(self.history_path)
+        m = dict(dfh.iloc[dfh.val_loss.idxmin()])
+        if self.cometml_experiment is not None:
+            self.cometml_experiment.log_multiple_metrics(m, prefix="best-epoch/")
+        if self.wandb_run is not None:
+            self.wandb_run.summary.update(flatten(prefix_dict(m, prefix="best-epoch/"), separator='/'))
 
     #     def load_best(self):
     #         """Load the best model from the Checkpoint file
