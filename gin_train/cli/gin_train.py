@@ -104,7 +104,7 @@ def train(output_dir,
     # from this point on, no configurable should be added. Save the gin config
     log_gin_config(output_dir, cometml_experiment, wandb_run)
 
-    train_dataset, valid_dataset = data
+    train_dataset, valid_dataset = data[0], data[1]
 
     # make sure the validation dataset names are unique
     if isinstance(valid_dataset, list):
