@@ -41,10 +41,12 @@ def train_valid_dataset(dataset_cls):
 
 
 def test_gin_train(tmpdir):
-    gin_train("tests/data/example.gin", str(tmpdir), force_overwrite=True)
+    run_id = 'test'
+    gin_train("tests/data/example.gin", str(tmpdir), run_id=run_id, force_overwrite=True)
 
+    output_dir = os.path.join(str(tmpdir), run_id)
     # produced files
     # assert os.path.exists(os.path.join(str(tmpdir), "log/stdout.log"))
-    assert os.path.exists(os.path.join(str(tmpdir), "config.gin"))
-    assert os.path.exists(os.path.join(str(tmpdir), "model.h5"))
-    assert os.path.exists(os.path.join(str(tmpdir), "history.csv"))
+    assert os.path.exists(os.path.join(output_dir, "config.gin"))
+    assert os.path.exists(os.path.join(output_dir, "model.h5"))
+    assert os.path.exists(os.path.join(output_dir, "history.csv"))
