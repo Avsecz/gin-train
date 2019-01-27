@@ -122,6 +122,8 @@ class KerasTrainer:
           metrics: a list or a dictionary of metrics
           batch_size:
           num_workers:
+          eval_train: if True, also compute the evaluation metrics on the training set
+          save: save the json file to the output directory
         """
         # contruct a list of dataset to evaluate
         if eval_train:
