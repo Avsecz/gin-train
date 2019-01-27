@@ -8,11 +8,18 @@ cd examples/mnist
 
 Run:
 ```bash
-gt config.gin output_dir --force-overwrite
+gt config.gin output_dir
 ```
 
 Example with cometml and s3:
 
 ```bash
-gt config.gin output_dir/a12e --remote-dir=s3://bucket1/test/asd --auto-subdir --cometml-project Avsecz/test
+gt config.gin output_dir --remote-dir=s3://bucket1/test/asd --cometml-project Avsecz/test
 ```
+
+Example with wandb
+
+```bash
+gt config.gin output_dir --wandb-project Avsecz/test
+```
+

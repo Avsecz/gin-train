@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from gin_train.utils import write_json
+from gin_train.utils import write_json, prefix_dict
 from tqdm import tqdm
 from kipoi.data_utils import numpy_collate_concat
 from kipoi.external.flatten_json import flatten
@@ -15,7 +15,8 @@ class KerasTrainer:
     """Simple Keras model trainer
     """
 
-    def __init__(self, model, train_dataset, valid_dataset, output_dir, cometml_experiment=None):
+    def __init__(self, model, train_dataset, valid_dataset, output_dir,
+                 cometml_experiment=None, wandb_run=None):
         """
         Args:
           model: compiled keras.Model
@@ -28,6 +29,7 @@ class KerasTrainer:
         self.train_dataset = train_dataset
         self.valid_dataset = valid_dataset
         self.cometml_experiment = cometml_experiment
+        self.wandb_run = wandb_run
 
         # setup the output directory
         self.output_dir = output_dir
@@ -82,6 +84,12 @@ class KerasTrainer:
         else:
             tb = []
 
+        if self.wandb_run is not None:
+            from wandb.keras import WandbCallback
+            wcp = [WandbCallback(save_model=False)]  # we save the model using ModelCheckpoint
+        else:
+            wcp = []
+
         # train the model
         if len(self.valid_dataset) == 0:
             raise ValueError("len(self.valid_dataset) == 0")
@@ -93,7 +101,7 @@ class KerasTrainer:
                                  validation_steps=max(int(len(self.valid_dataset) / batch_size * valid_epoch_frac), 1),
                                  callbacks=[EarlyStopping(patience=early_stop_patience),
                                             CSVLogger(self.history_path),
-                                            ModelCheckpoint(self.ckp_file, save_best_only=True)] + tb
+                                            ModelCheckpoint(self.ckp_file, save_best_only=True)] + tb + wcp
                                  )
         self.model = load_model(self.ckp_file)
 
@@ -126,8 +134,12 @@ class KerasTrainer:
 
         if save:
             write_json(metric_res, self.evaluation_path, indent=2)
+            logger.info("Saved metrics to {}".format(self.evaluation_path))
 
-        if self.cometml_experiment:
-            self.cometml_experiment.log_multiple_metrics(flatten(metric_res), prefix="best/")
+        if self.cometml_experiment is not None:
+            self.cometml_experiment.log_multiple_metrics(flatten(metric_res), prefix="eval/valid/")
+
+        if self.wandb_run is not None:
+            self.wandb_run.summary.update(flatten(prefix_dict(metric_res, prefix="eval/valid/")))
 
         return metric_res

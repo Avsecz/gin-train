@@ -6,11 +6,17 @@ import sys
 import os
 import yaml
 from uuid import uuid4
+from fs.osfs import OSFS
+from tqdm import tqdm
 from gin_train.remote import upload_dir
 from gin_train.config import create_tf_session
-from gin_train.utils import write_json, Logger, NumpyAwareJSONEncoder
+from gin_train.utils import write_json, Logger, NumpyAwareJSONEncoder, prefix_dict
 from comet_ml import Experiment
 
+try:
+    import wandb
+except ImportError:
+    wandb = None
 # import all modules registering any gin configurables
 
 # configurables import
@@ -25,7 +31,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-def log_gin_config(output_dir, cometml_experiment=None):
+def log_gin_config(output_dir, cometml_experiment=None, wandb_run=None):
     gin_config_str = gin.operative_config_str()
 
     print("Used config: " + "-" * 40)
@@ -45,6 +51,9 @@ def log_gin_config(output_dir, cometml_experiment=None):
     if cometml_experiment is not None:
         # Skip any rows starting with import
         cometml_experiment.log_multiple_params(gin_config_dict)
+
+    if wandb_run is not None:
+        wandb_run.config.update(gin_config_dict)
 
 
 def add_file_logging(output_dir, logger, name='stdout'):
@@ -81,7 +90,8 @@ def train(output_dir,
           stratified_sampler_p=None,
           tensorboard=True,
           remote_dir='',
-          cometml_experiment=None
+          cometml_experiment=None,
+          wandb_run=None
           ):
     """Main entry point to configure in the gin config
     Args:
@@ -89,7 +99,7 @@ def train(output_dir,
       data: tuple of (train, valid) Datasets
     """
     # from this point on, no configurable should be added. Save the gin config
-    log_gin_config(output_dir, cometml_experiment)
+    log_gin_config(output_dir, cometml_experiment, wandb_run)
 
     train_dataset, valid_dataset = data
     if stratified_sampler_p is not None and train_batch_sampler is not None:
@@ -106,43 +116,52 @@ def train(output_dir,
                                                                     p_vec=stratified_sampler_p,
                                                                     verbose=True)
 
-    tr = trainer_cls(model, train_dataset, valid_dataset, output_dir, cometml_experiment)
+    tr = trainer_cls(model, train_dataset, valid_dataset, output_dir, cometml_experiment, wandb_run)
     tr.train(batch_size, epochs, early_stop_patience,
              num_workers, train_epoch_frac, valid_epoch_frac, train_batch_sampler, tensorboard)
-    final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers)
+    final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers, save=True)
+    # pass
     logger.info("Done!")
     print("-" * 40)
     print("Final metrics: ")
     print(json.dumps(final_metrics, cls=NumpyAwareJSONEncoder, indent=2))
-    metrics_file = os.path.join(output_dir, 'evaluation.valid.json')
-    write_json(final_metrics, metrics_file, indent=2)
-    logger.info("Saved metrics to {}".format(metrics_file))
+
+    # upload files to a custom remote directory
     if remote_dir:
-        import time
-        time.sleep(1)  # sleep so that hdf5 from Keras finishes writing
         logger.info("Uploading files to: {}".format(remote_dir))
         upload_dir(output_dir, remote_dir)
+
+    # upload files to comet.ml
+    if cometml_experiment is not None:
+        logger.info("Uploading files to comet.ml")
+        for f in tqdm(list(OSFS(output_dir).walk.files())):
+            # [1:] removes trailing slash
+            cometml_experiment.log_asset(file_path=os.path.join(output_dir, f[1:]),
+                                         file_name=f[1:])
     return final_metrics
 
 
 def gin_train(gin_files, output_dir,
+              run_id=None,
               gin_bindings='',
               gpu=0,
               force_overwrite=False,
               framework='tf',
-              auto_subdir=False,
               remote_dir="",
               cometml_project="",
+              wandb_project="",
               note_params=""):
     """Train a model using gin-config
 
     Args:
       gin_file: comma separated list of gin files
       gin_bindings: comma separated list of additional gin-bindings to use
+      run_id: manual run id
       output_dir: where to store the results
       force_overwrite: if True, the output directory will be overwritten
       cometml_project: comet_ml project name. Example: Avsecz/basepair.
         If not specified, cometml will not get used
+      wandb_project: wandb project name. If not specified, wandb will not be used
       note_params: take note of additional key=value pairs.
         Example: --note-params note='my custom note',feature_set=this
     """
@@ -157,17 +176,46 @@ def gin_train(gin_files, output_dir,
     else:
         cometml_experiment = None
 
-    if auto_subdir:
-        if cometml_experiment is None:
-            # create random uuid
-            output_dir = os.path.join(output_dir, str(uuid4()))
-            if remote_dir:
-                remote_dir = os.path.join(remote_dir, str(uuid4()))
+    if wandb_project:
+        assert "/" in wandb_project
+        entity, project = wandb_project.split("/")
+        if wandb is None:
+            logger.warn("wandb not installed. Not using it")
+            wandb_run = None
         else:
-            # use Comet.ml experiment
-            output_dir = os.path.join(output_dir, cometml_experiment.id)
-            if remote_dir:
-                remote_dir = os.path.join(remote_dir, cometml_experiment.id)
+            wandb._set_stage_dir("./")
+            if run_id is not None:
+                wandb.init(project=project,
+                           dir=output_dir,
+                           entity=entity,
+                           resume=run_id)
+            else:
+                # automatically set the output
+                wandb.init(project=project,
+                           entity=entity,
+                           dir=output_dir)
+            wandb_run = wandb.run
+            logger.info("Using wandb")
+            print(wandb_run)
+    else:
+        wandb_run = None
+
+    # update the output directory
+    if run_id is None:
+        if wandb_run is not None:
+            run_id = os.path.basename(wandb_run.dir)
+        elif cometml_experiment is not None:
+            run_id = cometml_experiment.id
+        else:
+            # random run_id
+            run_id = str(uuid4())
+    output_dir = os.path.join(output_dir, run_id)
+    if remote_dir:
+        remote_dir = os.path.join(remote_dir, run_id)
+    if wandb_run is not None:
+        # make sure the output directory is the same
+        assert os.path.normpath(wandb_run.dir) == os.path.normpath(output_dir)
+    # -----------------------------
 
     if os.path.exists(os.path.join(output_dir, 'config.gin')):
         if force_overwrite:
@@ -203,6 +251,7 @@ def gin_train(gin_files, output_dir,
                sort_keys=True,
                indent=2)
 
+    # comet - log environment
     if cometml_experiment is not None:
         # log other parameters
         cometml_experiment.log_multiple_params(dict(gin_files=gin_files,
@@ -222,8 +271,26 @@ def gin_train(gin_files, output_dir,
                    sort_keys=True,
                    indent=2)
 
+    # wandb - log environment
+    if wandb_run is not None:
+        write_json({"url": wandb_run.get_url(),
+                    "key": wandb_run.id,
+                    "project": wandb_run.project,
+                    "path": wandb_run.path,
+                    "group": wandb_run.group
+                    },
+                   os.path.join(output_dir, "wandb.json"),
+                   sort_keys=True,
+                   indent=2)
+        # store general configs
+        wandb_run.config.update(prefix_dict(dict(gin_files=gin_files,
+                                                 gin_bindings=gin_bindings,
+                                                 output_dir=output_dir,
+                                                 gpu=gpu), prefix='cli/'))
+        wandb_run.config.update(note_params_dict)
+
     if remote_dir:
         import time
         logger.info("Test file upload to: {}".format(remote_dir))
         upload_dir(output_dir, remote_dir)
-    return train(output_dir=output_dir, remote_dir=remote_dir, cometml_experiment=cometml_experiment)
+    return train(output_dir=output_dir, remote_dir=remote_dir, cometml_experiment=cometml_experiment, wandb_run=wandb_run)

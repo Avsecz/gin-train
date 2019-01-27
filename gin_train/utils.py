@@ -45,3 +45,7 @@ class NumpyAwareJSONEncoder(json.JSONEncoder):
 def write_json(obj, fname, **kwargs):
     with open(fname, "w") as f:
         return json.dump(obj, f, cls=NumpyAwareJSONEncoder, **kwargs)
+
+
+def prefix_dict(d, prefix=''):
+    return {prefix + k: v for k, v in d.items()}
