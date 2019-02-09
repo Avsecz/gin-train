@@ -42,7 +42,7 @@ def log_gin_config(output_dir, cometml_experiment=None, wandb_run=None):
     # parse the gin config string to dictionary
     gin_config_str = "\n".join([x for x in gin_config_str.split("\n")
                                 if not x.startswith("import")])
-    gin_config_dict = yaml.load(gin_config_str.replace(" = @", ": ").replace(" = ", ": "))
+    gin_config_dict = yaml.load(gin_config_str.replace(" = @", ": ").replace(" = %", ": ").replace(" = ", ": "))
     write_json(gin_config_dict,
                os.path.join(output_dir, "config.gin.json"),
                sort_keys=True,
@@ -53,7 +53,8 @@ def log_gin_config(output_dir, cometml_experiment=None, wandb_run=None):
         cometml_experiment.log_multiple_params(gin_config_dict)
 
     if wandb_run is not None:
-        wandb_run.config.update(gin_config_dict)
+        # This allows to display the metric on the dashboard
+        wandb_run.config.update({k.replace(".", "/") :v for k,v in gin_config_dict.items()})
 
 
 def add_file_logging(output_dir, logger, name='stdout'):
@@ -159,6 +160,7 @@ def gin_train(gin_files,
               output_dir,
               gin_bindings='',
               gpu=0,
+              memfrac=0.45,
               framework='tf',
               cometml_project="",
               wandb_project="",
@@ -174,6 +176,7 @@ def gin_train(gin_files,
         will be created in `output_dir`.
       gin_bindings: comma separated list of additional gin-bindings to use
       gpu: which gpu to use. Example: gpu=1
+      memfrac: what fraction of the GPU's memory to use
       framework: which framework to use. Available: tf
       cometml_project: comet_ml project name. Example: Avsecz/basepair.
         If not specified, cometml will not get used
@@ -255,11 +258,11 @@ def gin_train(gin_files,
     if framework == 'tf':
         import gin.tf
         if gpu is not None:
-            logger.info(f"Using gpu: {gpu}")
-            create_tf_session(gpu)
+            logger.info(f"Using gpu: {gpu}, memory fraction: {memfrac}")
+            create_tf_session(gpu, per_process_gpu_memory_fraction=memfrac)
 
     gin.parse_config_files_and_bindings(gin_files.split(","),
-                                        bindings=gin_bindings.split(","),
+                                        bindings=gin_bindings.split(";"),
                                         skip_unknown=False)
 
     # write note_params.json

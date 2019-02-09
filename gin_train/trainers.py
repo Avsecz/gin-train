@@ -155,13 +155,16 @@ class KerasTrainer:
             logger.info(f"Evaluating dataset: {dataset_name}")
             lpreds = []
             llabels = []
+            from copy import deepcopy
             for inputs, targets in tqdm(dataset.batch_train_iter(cycle=False,
                                                                  num_workers=num_workers,
                                                                  batch_size=batch_size),
                                         total=len(dataset) // batch_size
                                         ):
                 lpreds.append(self.model.predict_on_batch(inputs))
-                llabels.append(targets)
+                llabels.append(deepcopy(targets))
+                del inputs
+                del targets
             preds = numpy_collate_concat(lpreds)
             labels = numpy_collate_concat(llabels)
             del lpreds
