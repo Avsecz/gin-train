@@ -54,7 +54,7 @@ def log_gin_config(output_dir, cometml_experiment=None, wandb_run=None):
 
     if wandb_run is not None:
         # This allows to display the metric on the dashboard
-        wandb_run.config.update({k.replace(".", "/") :v for k,v in gin_config_dict.items()})
+        wandb_run.config.update({k.replace(".", "/"): v for k, v in gin_config_dict.items()})
 
 
 def add_file_logging(output_dir, logger, name='stdout'):
