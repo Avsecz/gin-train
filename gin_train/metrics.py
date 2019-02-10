@@ -325,6 +325,42 @@ def var_explained(y_true, y_pred):
     return 1 - var_resid / var_y_true
 
 
+@gin.configurable
+def pearsonr(y_true, y_pred):
+    from scipy.stats import pearsonr
+    y_true, y_pred = _mask_nan(y_true, y_pred)
+    return pearsonr(y_true, y_pred)[0]
+
+
+@gin.configurable
+def spearmanr(y_true, y_pred):
+    from scipy.stats import spearmanr
+    y_true, y_pred = _mask_nan(y_true, y_pred)
+    return spearmanr(y_true, y_pred)[0]
+
+
+regression_metrics = [
+    ("mse", mse),
+    ("var_explained", var_explained),
+    ("pearsonr", pearsonr),  # pearson and spearman correlation
+    ("spearmanr", spearmanr),
+    ("mad", mad),  # median absolute deviation
+]
+
+
+@gin.configurable
+class RegressionMetrics:
+    """All classification metrics
+    """
+    cls_metrics = regression_metrics
+
+    def __init__(self):
+        self.regression_metric = MetricsOrderedDict(self.cls_metrics)
+
+    def __call__(self, y_true, y_pred):
+        return self.regression_metric(y_true, y_pred)
+
+
 # available eval metrics --------------------------------------------
 
 
