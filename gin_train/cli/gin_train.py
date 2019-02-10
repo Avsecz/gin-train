@@ -77,7 +77,7 @@ def kv_string2dict(s):
 def train(output_dir,
           model=gin.REQUIRED,
           data=gin.REQUIRED,
-          eval_metric=gin.REQUIRED,
+          eval_metric=None,
           eval_train=False,
           trainer_cls=KerasTrainer,
           # shared

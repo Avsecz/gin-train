@@ -358,6 +358,12 @@ class RegressionMetrics:
         self.regression_metric = MetricsOrderedDict(self.cls_metrics)
 
     def __call__(self, y_true, y_pred):
+        # squeeze the last dimension
+        if y_true.ndim == 2 and y_true.shape[1] == 1:
+            y_true = np.ravel(y_true)
+        if y_pred.ndim == 2 and y_pred.shape[1] == 1:
+            y_pred = np.ravel(y_pred)
+
         return self.regression_metric(y_true, y_pred)
 
 
