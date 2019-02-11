@@ -42,7 +42,10 @@ def log_gin_config(output_dir, cometml_experiment=None, wandb_run=None):
     # parse the gin config string to dictionary
     gin_config_str = "\n".join([x for x in gin_config_str.split("\n")
                                 if not x.startswith("import")])
-    gin_config_dict = yaml.load(gin_config_str.replace(" = @", ": ").replace(" = %", ": ").replace(" = ", ": "))
+    gin_config_dict = yaml.load(gin_config_str
+                                .replace("@", "")
+                                .replace(" = %", ": ")
+                                .replace(" = ", ": "))
     write_json(gin_config_dict,
                os.path.join(output_dir, "config.gin.json"),
                sort_keys=True,
