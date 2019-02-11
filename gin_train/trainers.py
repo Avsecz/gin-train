@@ -108,9 +108,10 @@ class KerasTrainer:
                                  validation_steps=max(int(len(valid_dataset) / batch_size * valid_epoch_frac), 1),
                                  callbacks=[EarlyStopping(patience=early_stop_patience,
                                                           restore_best_weights=True),
-                                            CSVLogger(self.history_path),
-                                            ModelCheckpoint(self.ckp_file, save_best_only=True)] + tb + wcp
+                                            CSVLogger(self.history_path)] + tb + wcp
+                                            # ModelCheckpoint(self.ckp_file, save_best_only=True)] 
                                  )
+        self.model.save(self.ckp_file)
         # self.model = load_model(self.ckp_file)  # not necessary, EarlyStopping is already restoring the best weights
 
         # log metrics from the best epoch
