@@ -91,6 +91,8 @@ def train(output_dir,
           early_stop_patience=4,
           train_epoch_frac=1.0,
           valid_epoch_frac=1.0,
+          train_samples_per_epoch=None,
+          validation_samples=None,
           train_batch_sampler=None,
           stratified_sampler_p=None,
           tensorboard=True,
@@ -134,8 +136,16 @@ def train(output_dir,
                                                                     verbose=True)
 
     tr = trainer_cls(model, train_dataset, valid_dataset, output_dir, cometml_experiment, wandb_run)
-    tr.train(batch_size, epochs, early_stop_patience,
-             num_workers, train_epoch_frac, valid_epoch_frac, train_batch_sampler, tensorboard)
+    tr.train(batch_size=batch_size, 
+             epochs=epochs, 
+             early_stop_patience=early_stop_patience,
+             num_workers=num_workers, 
+             train_epoch_frac=train_epoch_frac, 
+             valid_epoch_frac=valid_epoch_frac,
+             train_samples_per_epoch=train_samples_per_epoch,
+             validation_samples=validation_samples,
+             train_batch_sampler=train_batch_sampler, 
+             tensorboard=tensorboard)
     final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers,
                                 eval_train=eval_train, save=True)
     # pass
