@@ -91,6 +91,8 @@ def train(output_dir,
           early_stop_patience=4,
           train_epoch_frac=1.0,
           valid_epoch_frac=1.0,
+          train_samples_per_epoch=None,
+          validation_samples=None,
           train_batch_sampler=None,
           stratified_sampler_p=None,
           tensorboard=True,
@@ -134,8 +136,16 @@ def train(output_dir,
                                                                     verbose=True)
 
     tr = trainer_cls(model, train_dataset, valid_dataset, output_dir, cometml_experiment, wandb_run)
-    tr.train(batch_size, epochs, early_stop_patience,
-             num_workers, train_epoch_frac, valid_epoch_frac, train_batch_sampler, tensorboard)
+    tr.train(batch_size=batch_size, 
+             epochs=epochs, 
+             early_stop_patience=early_stop_patience,
+             num_workers=num_workers, 
+             train_epoch_frac=train_epoch_frac, 
+             valid_epoch_frac=valid_epoch_frac,
+             train_samples_per_epoch=train_samples_per_epoch,
+             validation_samples=validation_samples,
+             train_batch_sampler=train_batch_sampler, 
+             tensorboard=tensorboard)
     final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers,
                                 eval_train=eval_train, save=True)
     # pass
@@ -211,7 +221,7 @@ def gin_train(gin_files,
             logger.warn("wandb not installed. Not using it")
             wandb_run = None
         else:
-            wandb._set_stage_dir("./")
+            wandb._set_stage_dir("./")  # Don't prepend wandb to output file
             if run_id is not None:
                 wandb.init(project=project,
                            dir=output_dir,
@@ -242,7 +252,11 @@ def gin_train(gin_files,
         remote_dir = os.path.join(remote_dir, run_id)
     if wandb_run is not None:
         # make sure the output directory is the same
-        assert os.path.normpath(wandb_run.dir) == os.path.normpath(output_dir)
+        # wandb_run._dir = os.path.normpath(output_dir)  # This doesn't work
+        # assert os.path.normpath(wandb_run.dir) == os.path.normpath(output_dir)
+        # TODO - fix this assertion-> the output directories should be the same
+        # in order for snakemake to work correctly
+        pass
     # -----------------------------
 
     if os.path.exists(os.path.join(output_dir, 'config.gin')):

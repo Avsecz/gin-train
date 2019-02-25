@@ -53,6 +53,8 @@ class KerasTrainer:
               num_workers=8,
               train_epoch_frac=1.0,
               valid_epoch_frac=1.0,
+              train_samples_per_epoch=None,
+              validation_samples=None,
               train_batch_sampler=None,
               tensorboard=True):
         """Train the model
@@ -101,11 +103,23 @@ class KerasTrainer:
         if len(valid_dataset) == 0:
             raise ValueError("len(self.valid_dataset) == 0")
 
+        if train_samples_per_epoch is None:
+            train_steps_per_epoch = max(int(len(self.train_dataset) / batch_size * train_epoch_frac), 1)
+        else:
+            train_steps_per_epoch = max(int(train_samples_per_epoch / batch_size), 1)
+            
+        
+        if validation_samples is None:
+            # parametrize with valid_epoch_frac
+            validation_steps = max(int(len(valid_dataset) / batch_size * valid_epoch_frac), 1)
+        else:
+            validation_steps = max(int(validation_samples / batch_size), 1)
+
         self.model.fit_generator(train_it,
                                  epochs=epochs,
-                                 steps_per_epoch=max(int(len(self.train_dataset) / batch_size * train_epoch_frac), 1),
+                                 steps_per_epoch=train_steps_per_epoch,
                                  validation_data=valid_it,
-                                 validation_steps=max(int(len(valid_dataset) / batch_size * valid_epoch_frac), 1),
+                                 validation_steps=validation_steps,
                                  callbacks=[EarlyStopping(patience=early_stop_patience,
                                                           restore_best_weights=True),
                                             CSVLogger(self.history_path)] + tb + wcp
