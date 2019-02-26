@@ -136,7 +136,7 @@ class KerasTrainer:
             self.cometml_experiment.log_multiple_metrics(m, prefix="best-epoch/")
         if self.wandb_run is not None:
             self.wandb_run.summary.update(flatten(prefix_dict(m, prefix="best-epoch/"), separator='/'))
-        self.metrics = flatten(prefix_dict(m, prefix="best-epoch/")
+        self.metrics = flatten(prefix_dict(m, prefix="best-epoch/"))
 
     #     def load_best(self):
     #         """Load the best model from the Checkpoint file
