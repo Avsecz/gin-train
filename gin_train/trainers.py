@@ -32,6 +32,7 @@ class KerasTrainer:
         self.valid_dataset = valid_dataset
         self.cometml_experiment = cometml_experiment
         self.wandb_run = wandb_run
+        self.metrics = dict()
 
         if not isinstance(self.valid_dataset, list):
             # package the validation dataset into a list of validation datasets
@@ -135,6 +136,7 @@ class KerasTrainer:
             self.cometml_experiment.log_multiple_metrics(m, prefix="best-epoch/")
         if self.wandb_run is not None:
             self.wandb_run.summary.update(flatten(prefix_dict(m, prefix="best-epoch/"), separator='/'))
+        self.metrics = flatten(prefix_dict(m, prefix="best-epoch/")
 
     #     def load_best(self):
     #         """Load the best model from the Checkpoint file
@@ -196,5 +198,5 @@ class KerasTrainer:
 
         if self.wandb_run is not None:
             self.wandb_run.summary.update(flatten(prefix_dict(metric_res, prefix="eval/"), separator='/'))
-
+        metric_res = {**self.metrics, **metric_res}
         return metric_res
