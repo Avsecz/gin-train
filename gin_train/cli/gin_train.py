@@ -82,6 +82,7 @@ def train(output_dir,
           data=gin.REQUIRED,
           eval_metric=None,
           eval_train=False,
+          eval_skip=[],
           trainer_cls=KerasTrainer,
           # shared
           batch_size=256,
@@ -106,6 +107,7 @@ def train(output_dir,
       data: tuple of (train, valid) Datasets
       eval_train: if True, also compute the evaluation metrics for the final model
         on the training set
+      eval_skip List[str]: datasets to skip during evaluation
     """
     # from this point on, no configurable should be added. Save the gin config
     log_gin_config(output_dir, cometml_experiment, wandb_run)
@@ -147,7 +149,7 @@ def train(output_dir,
              train_batch_sampler=train_batch_sampler, 
              tensorboard=tensorboard)
     final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers,
-                                eval_train=eval_train, save=True)
+                                eval_train=eval_train, eval_skip=eval_skip, save=True)
     # pass
     logger.info("Done!")
     print("-" * 40)

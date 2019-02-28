@@ -141,7 +141,7 @@ class KerasTrainer:
     #         """
     #         self.model = load_model(self.ckp_file)
 
-    def evaluate(self, metric, batch_size=256, num_workers=8, eval_train=False, save=True):
+    def evaluate(self, metric, batch_size=256, num_workers=8, eval_train=False, eval_skip=False, save=True, **kwargs):
         """Evaluate the model on the validation set
         Args:
           metrics: a list or a dictionary of metrics
@@ -150,11 +150,19 @@ class KerasTrainer:
           eval_train: if True, also compute the evaluation metrics on the training set
           save: save the json file to the output directory
         """
+        if len(kwargs) > 0:
+            logger.warn(f"Extra kwargs were provided to trainer.evaluate: {kwargs}")
         # contruct a list of dataset to evaluate
         if eval_train:
             eval_datasets = [('train', self.train_dataset)] + self.valid_dataset
         else:
             eval_datasets = self.valid_dataset
+
+        try:
+            if len(eval_skip) > 0:
+                eval_datasets = [(k,v) for k,v in eval_datasets if k not in eval_skip]
+        except:
+            logger.warn(f"eval datasets don't contain tuples. Unable to skip them using {eval_skip}")
 
         metric_res = OrderedDict()
         for d in eval_datasets:
