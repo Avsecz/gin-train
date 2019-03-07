@@ -224,7 +224,7 @@ class Trainer(object):
         model: compiled sklearn.pipeline.Pipeline
         train (:obj:RepDataset): training dataset 
                                 The object should have the following properties: 
-                                obj.inputs, obj.targets, obj.metadata
+                                obj.inputs, obj.targets, obj.metadata, obj.dataset_name
         valid (:obj:RepDataset): validation dataset 
         output_dir: output directory where to log the training
         cometml_experiment: if not None, append logs to commetml
