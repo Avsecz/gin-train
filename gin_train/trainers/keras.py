@@ -1,24 +1,42 @@
+import abc
 import os
-import numpy as np
+from collections import OrderedDict
+
+# import numpy as np
 import pandas as pd
+
+from .base import Trainer
+
 from gin_train.utils import write_json, prefix_dict
 from tqdm import tqdm
-from collections import OrderedDict
+
+from keras.models import Model as KerasModel
 from kipoi.data_utils import numpy_collate_concat
 from kipoi.external.flatten_json import flatten
 import gin
+
 import logging
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
 @gin.configurable
-class KerasTrainer:
+class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
     """Simple Keras model trainer
     """
 
-    def __init__(self, model, train_dataset, valid_dataset, output_dir,
-                 cometml_experiment=None, wandb_run=None):
+    model: KerasModel
+
+    def __init__(
+            self,
+            model: KerasModel,
+            train_dataset,
+            valid_dataset,
+            output_dir,
+            cometml_experiment=None,
+            wandb_run=None
+    ):
         """
         Args:
           model: compiled keras.Model
@@ -107,8 +125,7 @@ class KerasTrainer:
             train_steps_per_epoch = max(int(len(self.train_dataset) / batch_size * train_epoch_frac), 1)
         else:
             train_steps_per_epoch = max(int(train_samples_per_epoch / batch_size), 1)
-            
-        
+
         if validation_samples is None:
             # parametrize with valid_epoch_frac
             validation_steps = max(int(len(valid_dataset) / batch_size * valid_epoch_frac), 1)
@@ -123,7 +140,7 @@ class KerasTrainer:
                                  callbacks=[EarlyStopping(patience=early_stop_patience,
                                                           restore_best_weights=True),
                                             CSVLogger(self.history_path)] + tb + wcp
-                                            # ModelCheckpoint(self.ckp_file, save_best_only=True)] 
+                                 # ModelCheckpoint(self.ckp_file, save_best_only=True)]
                                  )
         self.model.save(self.ckp_file)
         # self.model = load_model(self.ckp_file)  # not necessary, EarlyStopping is already restoring the best weights
@@ -141,7 +158,7 @@ class KerasTrainer:
     #         """
     #         self.model = load_model(self.ckp_file)
 
-    def evaluate(self, metric, batch_size=256, num_workers=8, eval_train=False, eval_skip=False, save=True, **kwargs):
+    def evaluate(self, metric, batch_size=256, num_workers=8, eval_train=False, eval_skip=(), save=True, **kwargs):
         """Evaluate the model on the validation set
         Args:
           metrics: a list or a dictionary of metrics
@@ -151,7 +168,7 @@ class KerasTrainer:
           save: save the json file to the output directory
         """
         if len(kwargs) > 0:
-            logger.warn(f"Extra kwargs were provided to trainer.evaluate: {kwargs}")
+            logger.warning(f"Extra kwargs were provided to trainer.evaluate: {kwargs}")
         # contruct a list of dataset to evaluate
         if eval_train:
             eval_datasets = [('train', self.train_dataset)] + self.valid_dataset
@@ -160,9 +177,9 @@ class KerasTrainer:
 
         try:
             if len(eval_skip) > 0:
-                eval_datasets = [(k,v) for k,v in eval_datasets if k not in eval_skip]
+                eval_datasets = [(k, v) for k, v in eval_datasets if k not in eval_skip]
         except:
-            logger.warn(f"eval datasets don't contain tuples. Unable to skip them using {eval_skip}")
+            logger.warning(f"eval datasets don't contain tuples. Unable to skip them using {eval_skip}")
 
         metric_res = OrderedDict()
         for d in eval_datasets:
