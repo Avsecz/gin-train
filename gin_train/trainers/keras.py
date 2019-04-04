@@ -223,3 +223,5 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
             self.wandb_run.summary.update(flatten(prefix_dict(metric_res, prefix="eval/"), separator='/'))
 
         return metric_res
+
+
