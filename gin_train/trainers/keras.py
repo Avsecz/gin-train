@@ -11,6 +11,15 @@ from gin_train.utils import write_json, prefix_dict
 from tqdm import tqdm
 
 from keras.models import Model as KerasModel
+from keras.models import load_model
+from keras.callbacks import (
+    EarlyStopping,
+    History,
+    CSVLogger,
+    ModelCheckpoint,
+    TensorBoard
+)
+
 from kipoi.data_utils import numpy_collate_concat
 from kipoi.external.flatten_json import flatten
 import gin
@@ -86,8 +95,6 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
           train_batch_sampler: batch Sampler for training. Useful for say Stratified sampling
           tensorboard: if True, tensorboard output will be added
         """
-        from keras.callbacks import EarlyStopping, History, CSVLogger, ModelCheckpoint, TensorBoard
-        from keras.models import load_model
 
         if train_batch_sampler is not None:
             train_it = self.train_dataset.batch_train_iter(shuffle=False,
@@ -132,26 +139,34 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
         else:
             validation_steps = max(int(validation_samples / batch_size), 1)
 
-        self.model.fit_generator(train_it,
-                                 epochs=epochs,
-                                 steps_per_epoch=train_steps_per_epoch,
-                                 validation_data=valid_it,
-                                 validation_steps=validation_steps,
-                                 callbacks=[EarlyStopping(patience=early_stop_patience,
-                                                          restore_best_weights=True),
-                                            CSVLogger(self.history_path)] + tb + wcp
-                                 # ModelCheckpoint(self.ckp_file, save_best_only=True)]
-                                 )
+        self.model.fit_generator(
+            train_it,
+            epochs=epochs,
+            steps_per_epoch=train_steps_per_epoch,
+            validation_data=valid_it,
+            validation_steps=validation_steps,
+            callbacks=[
+                          EarlyStopping(
+                              patience=early_stop_patience,
+                              # restore_best_weights=True
+                          ),
+                          CSVLogger(self.history_path)
+                      ] + tb + wcp
+            # ModelCheckpoint(self.ckp_file, save_best_only=True)]
+        )
         self.model.save(self.ckp_file)
         # self.model = load_model(self.ckp_file)  # not necessary, EarlyStopping is already restoring the best weights
 
         # log metrics from the best epoch
-        dfh = pd.read_csv(self.history_path)
-        m = dict(dfh.iloc[dfh.val_loss.idxmin()])
-        if self.cometml_experiment is not None:
-            self.cometml_experiment.log_multiple_metrics(m, prefix="best-epoch/")
-        if self.wandb_run is not None:
-            self.wandb_run.summary.update(flatten(prefix_dict(m, prefix="best-epoch/"), separator='/'))
+        try:
+            dfh = pd.read_csv(self.history_path)
+            m = dict(dfh.iloc[dfh.val_loss.idxmin()])
+            if self.cometml_experiment is not None:
+                self.cometml_experiment.log_multiple_metrics(m, prefix="best-epoch/")
+            if self.wandb_run is not None:
+                self.wandb_run.summary.update(flatten(prefix_dict(m, prefix="best-epoch/"), separator='/'))
+        except FileNotFoundError as e:
+            logger.warning(e)
 
     #     def load_best(self):
     #         """Load the best model from the Checkpoint file
@@ -197,11 +212,14 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
             lpreds = []
             llabels = []
             from copy import deepcopy
-            for inputs, targets in tqdm(dataset.batch_train_iter(cycle=False,
-                                                                 num_workers=num_workers,
-                                                                 batch_size=batch_size),
-                                        total=len(dataset) // batch_size
-                                        ):
+            for inputs, targets in tqdm(
+                    dataset.batch_train_iter(
+                        cycle=False,
+                        num_workers=num_workers,
+                        batch_size=batch_size
+                    ),
+                    total=len(dataset) // batch_size
+            ):
                 lpreds.append(self.model.predict_on_batch(inputs))
                 llabels.append(deepcopy(targets))
                 del inputs
@@ -223,5 +241,3 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
             self.wandb_run.summary.update(flatten(prefix_dict(metric_res, prefix="eval/"), separator='/'))
 
         return metric_res
-
-
