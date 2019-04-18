@@ -7,6 +7,7 @@ import os
 import yaml
 from uuid import uuid4
 from fs.osfs import OSFS
+import numpy as np
 from tqdm import tqdm
 from gin_train.remote import upload_dir
 from gin_train.config import create_tf_session
@@ -97,6 +98,7 @@ def train(output_dir,
           train_batch_sampler=None,
           stratified_sampler_p=None,
           tensorboard=True,
+          seed=None,
           remote_dir='',
           cometml_experiment=None,
           wandb_run=None
@@ -108,11 +110,23 @@ def train(output_dir,
       eval_train: if True, also compute the evaluation metrics for the final model
         on the training set
       eval_skip List[str]: datasets to skip during evaluation
+      seed: random seed to use (in numpy and tensorflow)
     """
     # from this point on, no configurable should be added. Save the gin config
     log_gin_config(output_dir, cometml_experiment, wandb_run)
 
     train_dataset, valid_dataset = data[0], data[1]
+
+    if seed is not None:
+        # Set the random seed
+        import random
+        random.seed(seed)
+        np.random.seed(seed)
+        try:
+            import tensorflow as tf
+            tf.set_random_seed(seed)
+        except Exception:
+            logger.info("Unable to set random seed for tensorflow")
 
     # make sure the validation dataset names are unique
     if isinstance(valid_dataset, list):
@@ -138,15 +152,15 @@ def train(output_dir,
                                                                     verbose=True)
 
     tr = trainer_cls(model, train_dataset, valid_dataset, output_dir, cometml_experiment, wandb_run)
-    tr.train(batch_size=batch_size, 
-             epochs=epochs, 
+    tr.train(batch_size=batch_size,
+             epochs=epochs,
              early_stop_patience=early_stop_patience,
-             num_workers=num_workers, 
-             train_epoch_frac=train_epoch_frac, 
+             num_workers=num_workers,
+             train_epoch_frac=train_epoch_frac,
              valid_epoch_frac=valid_epoch_frac,
              train_samples_per_epoch=train_samples_per_epoch,
              validation_samples=validation_samples,
-             train_batch_sampler=train_batch_sampler, 
+             train_batch_sampler=train_batch_sampler,
              tensorboard=tensorboard)
     final_metrics = tr.evaluate(eval_metric, batch_size=batch_size, num_workers=num_workers,
                                 eval_train=eval_train, eval_skip=eval_skip, save=True)
