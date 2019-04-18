@@ -59,6 +59,7 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
         self.valid_dataset = valid_dataset
         self.cometml_experiment = cometml_experiment
         self.wandb_run = wandb_run
+        self.metrics = dict()
 
         if not isinstance(self.valid_dataset, list):
             # package the validation dataset into a list of validation datasets
@@ -239,5 +240,6 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
 
         if self.wandb_run is not None:
             self.wandb_run.summary.update(flatten(prefix_dict(metric_res, prefix="eval/"), separator='/'))
-
+        metric_res = {**self.metrics, **metric_res}
         return metric_res
+
