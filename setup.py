@@ -3,21 +3,6 @@
 
 from setuptools import setup, find_packages
 
-requirements = [
-    "kipoi>=0.6.0",
-    "gin-config",
-    "comet_ml",
-    "numpy",
-    "pandas",
-    "tqdm",
-    "colorlog",
-    "argh",
-    "scikit-learn>=0.20",
-    "fs",
-    "fs-s3fs",
-    # sometimes required
-]
-
 test_requirements = [
     "bumpversion",
     "wheel",
@@ -39,9 +24,27 @@ setup(
     url='https://github.com/avsecz/gin-train',
     long_description="gin-train: model training boilerplate",
     packages=find_packages(),
-    install_requires=requirements,
+    install_requires=[
+        "kipoi>=0.6.0",
+        "gin-config",
+        "comet_ml",
+        "numpy",
+        "pandas",
+        "tqdm",
+        "colorlog",
+        "argh",
+        "fs",
+        "fs-s3fs",
+        # sometimes required
+    ],
     extras_require={
         "develop": test_requirements,
+        "keras": [
+            "keras>=2.2.3"
+        ],
+        "scikit-learn": [
+            "scikit-learn>=0.20",
+        ],
     },
     entry_points={'console_scripts': ['gin_train = gin_train.__main__:main', 'gt = gin_train.__main__:main']},
     license="MIT license",
@@ -51,4 +54,3 @@ setup(
     package_data={'gin_train': ['logging.conf']},
     tests_require=test_requirements
 )
-
