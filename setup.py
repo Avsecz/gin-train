@@ -35,15 +35,13 @@ setup(
         "argh",
         "fs",
         "fs-s3fs",
+        "scikit-learn>=0.20",
         # sometimes required
     ],
     extras_require={
         "develop": test_requirements,
         "keras": [
             "keras>=2.2.3"
-        ],
-        "scikit-learn": [
-            "scikit-learn>=0.20",
         ],
     },
     entry_points={'console_scripts': ['gin_train = gin_train.__main__:main', 'gt = gin_train.__main__:main']},
