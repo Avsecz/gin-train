@@ -13,6 +13,7 @@ test_requirements = [
     "pytest-pep8",
     "pytest-cov",
     "coveralls",
+    "keras>=2.2.3"
 ]
 
 setup(
