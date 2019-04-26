@@ -21,7 +21,7 @@ from keras.callbacks import (
 )
 
 from kipoi.data_utils import numpy_collate_concat
-from kipoi.external.flatten_json import flatten
+from kipoi_utils.external.flatten_json import flatten
 import gin
 
 import logging

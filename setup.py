@@ -27,6 +27,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "kipoi>=0.6.0",
+        "kipoi-utils>=0.1.12",
         "gin-config",
         "comet_ml",
         "numpy",
