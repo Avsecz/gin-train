@@ -149,7 +149,7 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
             callbacks=[
                           EarlyStopping(
                               patience=early_stop_patience,
-                              # restore_best_weights=True
+                              restore_best_weights=True
                           ),
                           CSVLogger(self.history_path)
                       ] + tb + wcp
