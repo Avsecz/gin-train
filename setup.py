@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, find_packages
@@ -18,7 +19,7 @@ test_requirements = [
 
 setup(
     name='gin-train',
-    version='0.1.17',
+    version='0.1.18',
     description="gin-train: model training boilerplate",
     author="Ziga Avsec",
     author_email='avsec@in.tum.de',
@@ -29,7 +30,7 @@ setup(
         "kipoi>=0.6.0",
         "kipoi-utils>=0.1.12",
         "gin-config",
-        "comet_ml",
+        "comet_ml>=2.0.14",
         "numpy",
         "pandas",
         "tqdm",

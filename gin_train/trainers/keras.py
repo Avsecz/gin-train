@@ -1,30 +1,23 @@
-import abc
-import os
 from collections import OrderedDict
 
+import abc
+import gin
+import logging
+import os
 # import numpy as np
 import pandas as pd
-
-from .base import Trainer
-
-from gin_train.utils import write_json, prefix_dict
-from tqdm import tqdm
-
-from keras.models import Model as KerasModel
-from keras.models import load_model
 from keras.callbacks import (
     EarlyStopping,
-    History,
     CSVLogger,
-    ModelCheckpoint,
     TensorBoard
 )
-
+from keras.models import Model as KerasModel
 from kipoi.data_utils import numpy_collate_concat
 from kipoi_utils.external.flatten_json import flatten
-import gin
+from tqdm import tqdm
 
-import logging
+from gin_train.utils import write_json, prefix_dict
+from .base import Trainer
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -163,7 +156,7 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
             dfh = pd.read_csv(self.history_path)
             m = dict(dfh.iloc[dfh.val_loss.idxmin()])
             if self.cometml_experiment is not None:
-                self.cometml_experiment.log_multiple_metrics(m, prefix="best-epoch/")
+                self.cometml_experiment.log_metrics(m, prefix="best-epoch/")
             if self.wandb_run is not None:
                 self.wandb_run.summary.update(flatten(prefix_dict(m, prefix="best-epoch/"), separator='/'))
         except FileNotFoundError as e:
@@ -236,7 +229,7 @@ class KerasTrainer(Trainer, metaclass=abc.ABCMeta):
             logger.info("Saved metrics to {}".format(self.evaluation_path))
 
         if self.cometml_experiment is not None:
-            self.cometml_experiment.log_multiple_metrics(flatten(metric_res, separator='/'), prefix="eval/")
+            self.cometml_experiment.log_metrics(flatten(metric_res, separator='/'), prefix="eval/")
 
         if self.wandb_run is not None:
             self.wandb_run.summary.update(flatten(prefix_dict(metric_res, prefix="eval/"), separator='/'))
